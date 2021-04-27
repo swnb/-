@@ -1,0 +1,98 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-25 14:34:54
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-31 18:12:39
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碰撞</title>
+  <script src="./common/echarts.min.js"></script>
+  <script src="./common/数学/Math.js"></script>
+  <script src="./common/数学/Calculus.js"></script>
+  <style>
+    #main {
+      width: 800px;
+      height: 800px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <div id="main"></div>
+  </div>
+  <script>
+
+    window.onload = function () {
+      const Vmax = 1E3
+
+      function t(u, v, w) {
+        if (w >= v) return 0
+        return (1 / v + w / (v ** 2 * (1 - (w / v) ** 2) ** .5)) / 2
+      }
+
+      function 迭代器(v, w, 联合概率分布) {
+        return Calculus.integral(v => t(0, v, w) * 联合概率分布[Math.floor(v / Vmax)], 1E-4, Vmax - 1E-4, 1E-2)
+      }
+
+      let i = 0
+      let I = 10
+      let N = 40
+      let 联合概率分布 = Array(N).fill(1 / N)
+      while (i < I) {
+        let 联合概率分布Sum = 0
+        for (let n = 0; n < N; n++) {
+          for (let m = 0; m < N; m++) {
+            let u1 = Vmax * (n + .5) / N;
+            let v1 = Vmax * (m + .5) / N;
+            联合概率分布[n][m] = Calculus.integral(v => t(0, v, w) * 联合概率分布[Math.floor(v / Vmax)], 1E-4, Vmax - 1E-4, 1E-2)
+            联合概率分布Sum += 联合概率分布[n][m]
+          }
+        }
+        for (let n = 0; n < N; n++) {
+          for (let m = 0; m < N; m++) {
+            联合概率分布[n][m] /= 联合概率分布Sum
+          }
+        }
+        i++
+      }
+
+      console.log(联合概率分布)
+      console.log(联合概率分布.map((p, i) => p * Vmax * i / N).reduce((s, v) => s + v, 0) / 联合概率分布.length)
+
+      var chartDom = document.getElementById('main');
+      var myChart = echarts.init(chartDom);
+      var option;
+      option = {
+        xAxis: {
+          type: 'category',
+          data: Array(N).fill(undefined).map((_, i) => Vmax * (i + .5) / N),
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [{
+          data: 联合概率分布,
+          type: 'bar'
+        },
+        {
+          data: 联合概率分布,
+          type: 'line',
+          smooth: true
+        }]
+      };
+
+      option && myChart.setOption(option);
+    }
+  </script>
+</body>
+
+</html>

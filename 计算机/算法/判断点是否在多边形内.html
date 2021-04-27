@@ -1,0 +1,153 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-04-20 09:04:26
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-04-20 18:02:27
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>判断点是否在多边形内</title>
+  <style>
+    canvas {
+      display: inline-block;
+      border: 1px solid gray;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="panel"></div>
+  <script>
+    function getDistanceOfPointToPoint(point1, point2) {
+      let [x1, y1] = point1;
+      let [x2, y2] = point2;
+      let distance = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** .5;
+      return distance;
+    }
+
+    function getRandom(range) {
+      let min, max;
+      if (Number.isFinite(range)) {
+        min = -range;
+        max = range;
+      } else {
+        min = range.min || 0;
+        max = range.max || 1;
+      }
+      return Math.random() * (max - min) + min;
+    }
+
+    function getRandomPoint(center, range) {
+      let x = center[0] + getRandom(range);
+      let y = center[1] + getRandom(range);
+      return [x, y];
+    }
+
+    function getLinesByPoints(points) {
+      let lines = [];
+      for (let i = 1; i <= points.length; i++) {
+        lines.push([points[i - 1], points[i % points.length]]);
+      }
+      return lines;
+    }
+
+    function genPolygon(n, center, range) {
+      let point;
+      let points = [];
+      for (let i = 0; i < n; i++) {
+        do {
+          point = getRandomPoint(center, range);
+        } while (points.some(_point => getDistanceOfPointToPoint(point, _point) < 6));
+        points.push(point);
+      }
+      let meanPoint = points.reduce((s, v) => [s[0] + v[0], s[1] + v[1]], [0, 0])
+        .map(value => value / n);
+      points.sort((point1, point2) => Math.atan2(point1[1] - meanPoint[1], point1[0] - meanPoint[0])
+        - Math.atan2(point2[1] - meanPoint[1], point2[0] - meanPoint[0]))
+      let lines = getLinesByPoints(points);
+      return { meanPoint, points, lines };
+    }
+
+    function drawPolygon(ctx, points, color = 'black') {
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(...point);
+        else ctx.lineTo(...point);
+      });
+      ctx.closePath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    function getRect(points) {
+      let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+      points.forEach(point => {
+        left = Math.min(point[0], left);
+        right = Math.max(point[0], right);
+        top = Math.min(point[1], top);
+        bottom = Math.max(point[1], bottom);
+      });
+      return { left, right, top, bottom };
+    }
+
+    function getLineEquation(line) {
+      let [x1, y1] = line[0];
+      let [x2, y2] = line[1];
+      return (x, y) => ((x2 - x1) * y + (y1 - y2) * x + (x1 * y2 - x2 * y1));
+    }
+
+    function checkLineIntersect(line1, line2) {
+      const line1Equation = getLineEquation(line1);
+      const line2Equation = getLineEquation(line2);
+      return line1Equation(...line2[0]) * line1Equation(...line2[1]) < 0
+        && line2Equation(...line1[0]) * line2Equation(...line1[1]) < 0;
+    }
+
+    function checkPointInPolygon(point, polygon) {
+      let rect = getRect(polygon.points);
+      let line = [point, [rect.right + 1, rect.bottom + 1]];
+      return polygon.lines.filter(_line => checkLineIntersect(_line, line)).length % 2 === 1;
+    }
+
+    let panel = document.querySelector('#panel');
+    let size = 411;
+    function newContext() {
+      let canvas = document.createElement('canvas');
+      canvas.setAttribute('width', size);
+      canvas.setAttribute('height', size);
+      panel.append(canvas);
+      return canvas.getContext('2d');
+    }
+
+    function test1() {
+      let ctx = newContext();
+      let n = 7;
+      let polygon = genPolygon(n, [200, 200], 187);
+      drawPolygon(ctx, polygon.points, 'red');
+
+      let point = getRandomPoint([200, 200], 30);
+      ctx.beginPath();
+      ctx.arc(...point, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = 'blue'
+      ctx.fill();
+      ctx.closePath();
+      ctx.fillStyle = 'black'
+      ctx.fillText(checkPointInPolygon(point, polygon) ? "内" : "外", 20, 20);
+    }
+
+    window.onload = function () {
+      test1();
+    };
+  </script>
+</body>
+
+</html>

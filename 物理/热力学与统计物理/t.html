@@ -1,0 +1,107 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-25 14:34:54
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-31 17:10:24
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碰撞</title>
+  <script src="./common/echarts.min.js"></script>
+  <script src="./common/数学/Math.js"></script>
+  <script src="./common/数学/Calculus.js"></script>
+  <style>
+    #main {
+      width: 800px;
+      height: 800px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <div id="main"></div>
+  </div>
+  <script>
+
+    window.onload = function () {
+      const Vmax = 1E3
+
+      function t0(v, w) {
+        if (w >= v) return 0
+        return w / (v ** 2 * (1 - (w / v) ** 2) ** .5)
+      }
+
+      function t1(v, w) {
+        if (w >= v) return 0
+      }
+
+      /*
+      计算概率密度
+      u 被撞粒子被撞前速度
+      v 撞击粒子被撞前速度
+      w 被撞粒子被撞后速度
+      */
+      function t(u, v, w) {
+        if (w >= v) return 0
+        return w / (v ** 2 * (1 - (w / v) ** 2) ** .5)
+      }
+
+      function iter(w, pus) {
+        return Calculus.integral(v => t(0, v, w) * pus[Math.floor(v / Vmax)], 1E-4, Vmax - 1E-4, 1E-2)
+      }
+
+      let i = 0
+      let I = 10
+      let N = 40
+      let pus = Array(N).fill(1 / N)
+      while (i < I) {
+        let pusSum = 0
+        for (let n = 0; n < N; n++) {
+          pus[n] = iter(Vmax * (n + .5) / N, pus)
+          pusSum += pus[n]
+        }
+        for (let n = 0; n < N; n++) {
+          pus[n] /= pusSum
+        }
+        i++
+      }
+
+      console.log(pus)
+      console.log(pus.map((p, i) => p * Vmax * i / N).reduce((s, v) => s + v, 0) / pus.length)
+
+      var chartDom = document.getElementById('main');
+      var myChart = echarts.init(chartDom);
+      var option;
+      option = {
+        xAxis: {
+          type: 'category',
+          data: Array(N).fill(undefined).map((_, i) => Vmax * (i + .5) / N),
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [{
+          data: pus,
+          type: 'bar'
+        },
+        {
+          data: pus,
+          type: 'line',
+          smooth: true
+        }]
+      };
+
+      option && myChart.setOption(option);
+    }
+  </script>
+</body>
+
+</html>

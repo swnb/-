@@ -1,0 +1,160 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-08 13:03:12
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-12 15:27:10
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碰撞</title>
+  <script src="../../common/echarts.min.js"></script>
+  <script src="../../common/数学/Math.js"></script>
+  <script src="../../common/数学/Vector.js"></script>
+  <script src="../Physics.js"></script>
+  <script src="Particle.js"></script>
+  <script src="genParticles.js"></script>
+  <style>
+    #canvas1 {
+      border: 1px solid black;
+    }
+
+    #main {
+      float: right;
+      width: 500px;
+      height: 500px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <canvas id="canvas1" width="1250" height="800"></canvas>
+    <div id="main"></div>
+  </div>
+  <script>
+
+    window.onload = function () {
+      let cvs1 = document.querySelector('#canvas1');
+      let ctx = cvs1.getContext("2d");
+
+      let particles = genParticles(200);
+
+      function draw() {
+        cvs1.height = cvs1.height;
+        particles.forEach(particle => {
+          let speed = new Vector(particle.velocity).normal();
+          let maxSpeed = 5 * 100;
+          speed = Math.min(speed, maxSpeed);
+          let scale = speed / maxSpeed;
+          let red = parseInt(255 * scale)
+          let blue = 255 - red;
+          ctx.fillStyle = `rgb(${red}, 0, ${blue})`;
+          ctx.beginPath();
+          ctx.arc(...particle.position, particle.radius, 0, Math.PI * 2, true);
+          ctx.closePath();
+          ctx.fill();
+        });
+      }
+
+      const MaxSampleCount = 50000;
+      let samples = [];
+
+      draw();
+      let timer1 = setInterval(() => {
+        particles.forEach(particle1 => {
+          particle1.run();
+          let particle2 = particles.find(particle2 => {
+            return particle2 !== particle1 && particle2.isExclusion(particle1.position, particle1.radius);
+          });
+          if (particle2) {
+            let velocity1 = new Vector(particle1.velocity);
+            let velocity2 = new Vector(particle2.velocity);
+            let p12 = new Vector(particle2.position).sub(new Vector(particle1.position));
+            let v12 = velocity1.sub(new Vector(particle2.velocity));
+            let v12Normal = v12.normal();
+
+            p12 = p12.normalize();
+            v12 = v12.normalize();
+            let cosθ = p12.cosθ(v12);
+            let sinθ = p12.sinθ(v12);
+
+            particle2.velocity = velocity1.sub(p12.rotate(Math.PI / 2).scale(v12Normal * sinθ)).data;
+            particle1.velocity = velocity1.sub(p12.scale(v12Normal * cosθ)).data;
+
+            if (samples.length < particles.length * MaxSampleCount) {
+              samples = samples.concat(particles.map(particle => new Vector(particle.velocity).normal()));
+            } else {
+              statstic(samples);
+              samples = [];
+            }
+          }
+        })
+        draw();
+      }, 5);
+
+      setInterval(() => {
+        console.log('样本数', samples.length);
+      }, 10 * 1000)
+
+      var chartDom = document.getElementById('main');
+      var myChart = echarts.init(chartDom);
+      var option;
+      let vp;
+      let vaverage;
+      let vrms;
+
+      function statstic(samples) {
+        let N = 20;
+        let velocityList = samples.sort((a, b) => a - b);
+        let maxVelocity = velocityList[velocityList.length - 1];
+        let velocityAxis = Array(N).fill(undefined).map((_, index) => (maxVelocity * index / N).toFixed(2));
+        let data = Array(N + 1).fill(0);
+        for (let i = 0; i < velocityList.length; i++) {
+          let velocity = velocityList[i];
+          data[Math.round(N * velocity / maxVelocity)]++;
+        }
+        vp = maxVelocity * (data.indexOf(Math.max(...data)) / data.length);
+        vaverage = velocityList.reduce((s, v) => s + v, 0) / velocityList.length;
+        vrms = (velocityList.map(v => v ** 2).reduce((s, v) => s + v, 0) / velocityList.length) ** .5;
+        console.log({
+          vp,
+          vaverage,
+          vrms,
+          a: 1,
+          b: vaverage / vp,
+          c: vrms / vp,
+        })
+
+        option = {
+          xAxis: {
+            type: 'category',
+            data: velocityAxis,
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            data: data,
+            type: 'bar'
+          },
+          {
+            data: data,
+            type: 'line',
+            smooth: true
+          }]
+        };
+
+        option && myChart.setOption(option);
+      }
+    }
+  </script>
+</body>
+
+</html>

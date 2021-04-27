@@ -1,0 +1,14 @@
+.wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.axis-x {
+  position: absolute;
+  left: 0;
+}
+
+.axis-y {
+  position: absolute;
+  left: 0;
+}

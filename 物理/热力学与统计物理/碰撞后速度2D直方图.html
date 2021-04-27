@@ -1,0 +1,111 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-25 14:34:54
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-04-02 17:59:44
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碰撞</title>
+  <script src="./common/echarts.min.js"></script>
+  <script src="./common/echarts-gl.min.js"></script>
+  <script src="./d2.js"></script>
+  <style>
+    #container {
+      margin-left: 20px;
+    }
+
+    #container>.chart {
+      width: 450px;
+      height: 450px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+  </div>
+  <script>
+
+    window.onload = function () {
+      let container = document.getElementById('container')
+      for (let i = 0; i < pv.length; i++) {
+        let c = cs[i]
+        let pvc = pv[i]
+        let VMax = (1 ** 2 + c ** 2) ** .5
+        // if (c >= .5 && c <= 2) pvc = pvc.map((p, i) => p -= pvc[pvc.length - 1] * i / pvc.length)
+        let k = pvc.reduce((kmin, v, i) => {
+          let k = v / i
+          return Math.min(kmin, k)
+        }, Infinity)
+        let k2 = pvc.reduce((kmin, v, i) => {
+          let k = v / (i * VMax / pvc.length)
+          return Math.min(kmin, k)
+        }, Infinity)
+
+        pvc = pvc.map((p, i) => p -= k * i)
+        createChart(pvc, c)
+        // 为了使简化模型 使用最似然的角度代替整体
+        let pMax = -Infinity
+        let v
+        for (let j = 0; j < pvc.length; j++) {
+          let p = pvc[j]
+          if (p > pMax) {
+            v = (j / pvc.length) * VMax
+            pMax = p
+          }
+        }
+        console.log({
+          c,
+          v,
+          k2,
+          k3: k2 * VMax,
+          vc: v / VMax,
+        })
+      }
+
+
+      function createChart(data, c) {
+        let VMax = (1 ** 2 + c ** 2) ** .5
+        let dom = document.createElement('div')
+        dom.classList.add('chart')
+        container.append(dom)
+        var myChart = echarts.init(dom);
+        var option = {
+          title: {
+            text: c.toFixed(2),
+          },
+          xAxis: {
+            type: 'category',
+            data: Array(data.length).fill(undefined).map((_, i) => (VMax * (i + .5) / data.length).toFixed(2)),
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            data: data,
+            type: 'bar'
+          },
+            // {
+            //   data: data,
+            //   type: 'line',
+            //   smooth: true
+            // }
+          ]
+        };
+
+        myChart.setOption(option);
+      }
+    }
+  </script>
+</body>
+
+</html>

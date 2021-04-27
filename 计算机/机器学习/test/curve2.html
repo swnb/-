@@ -1,0 +1,75 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-02-18 13:21:43
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-15 15:45:01
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>曲线2</title>
+  <script src="../../../common/Color.js"></script>
+  <script src="../../../common/Coordinate.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../common/main.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="space1"></div>
+    <div id="space2"></div>
+    <div id="space3"></div>
+    <div id="space4"></div>
+  </div>
+  <script>
+    window.onload = function () {
+      let space1 = document.querySelector('#space1');
+      let space2 = document.querySelector('#space2');
+      let space3 = document.querySelector('#space3');
+      let space4 = document.querySelector('#space4');
+
+      let coord1 = new Coordinate(space1);
+      let coord2 = new Coordinate(space2);
+      let coord3 = new Coordinate(space3);
+      let coord4 = new Coordinate(space4);
+      
+      coord1.setScale(-10, -10, 10, 110);
+      coord1.curve2((x, y) => {
+        return x * x - y;
+      });
+      coord1.curve2((x, y) => {
+        return 100 - x * x - y;
+      });
+
+      coord2.setScale(-3, -3, 4, 4);
+      coord2.curve2((x, y) => {
+        return -x - y;
+      }, color = 'red');
+
+      coord3.setScale(44 - 40, 0, 44 + 40, 80);
+      coord3.curve2((x, y) => {
+        let ox = 44;
+        let oy = 0;
+        let dx = x - ox;
+        let dy = y - oy;
+        return dx * dx + dy * dy - 36 * 36;
+      });
+
+      coord4.setScale(44 - 40, -5, 44 + 40, 75);
+      coord4.curve2((x, y) => {
+        let ox = 44;
+        let oy = 36;
+        let dx = x - ox;
+        let dy = y - oy;
+        return dx * dx + dy * dy - 36 * 36;
+      });
+    }
+  </script>
+</body>
+
+</html>

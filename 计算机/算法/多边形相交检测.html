@@ -1,0 +1,247 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-04-20 09:04:26
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-04-20 18:06:42
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>多边形相交检测</title>
+  <style>
+    canvas {
+      display: inline-block;
+      border: 1px solid gray;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="panel"></div>
+  <script>
+    function getDistanceOfPointToPoint(point1, point2) {
+      let [x1, y1] = point1;
+      let [x2, y2] = point2;
+      let distance = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** .5;
+      return distance;
+    }
+
+    function getRandom(range) {
+      let min, max;
+      if (Number.isFinite(range)) {
+        min = -range;
+        max = range;
+      } else {
+        min = range.min || 0;
+        max = range.max || 1;
+      }
+      return Math.random() * (max - min) + min;
+    }
+
+    function getRandomPoint(center, range) {
+      let x = center[0] + getRandom(range);
+      let y = center[1] + getRandom(range);
+      return [x, y];
+    }
+
+    function getLinesByPoints(points) {
+      let lines = [];
+      for (let i = 1; i <= points.length; i++) {
+        lines.push([points[i - 1], points[i % points.length]]);
+      }
+      return lines;
+    }
+
+    function genPolygon(n, center, range) {
+      let point;
+      let points = [];
+      for (let i = 0; i < n; i++) {
+        do {
+          point = getRandomPoint(center, range);
+        } while (points.some(_point => getDistanceOfPointToPoint(point, _point) < 6));
+        points.push(point);
+      }
+      let meanPoint = points.reduce((s, v) => [s[0] + v[0], s[1] + v[1]], [0, 0])
+        .map(value => value / n);
+      points.sort((point1, point2) => Math.atan2(point1[1] - meanPoint[1], point1[0] - meanPoint[0])
+        - Math.atan2(point2[1] - meanPoint[1], point2[0] - meanPoint[0]))
+      let lines = getLinesByPoints(points);
+      return { meanPoint, points, lines };
+    }
+
+    function drawPolygon(ctx, points, color = 'black') {
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(...point);
+        else ctx.lineTo(...point);
+      });
+      ctx.closePath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    function getLineEquation(line) {
+      let [x1, y1] = line[0];
+      let [x2, y2] = line[1];
+      return (x, y) => ((x2 - x1) * y + (y1 - y2) * x + (x1 * y2 - x2 * y1));
+    }
+
+    function checkLineIntersect(line1, line2) {
+      const line1Equation = getLineEquation(line1);
+      const line2Equation = getLineEquation(line2);
+      return line1Equation(...line2[0]) * line1Equation(...line2[1]) < 0
+        && line2Equation(...line1[0]) * line2Equation(...line1[1]) < 0;
+    }
+
+    function getRect(points) {
+      let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+      points.forEach(point => {
+        left = Math.min(point[0], left);
+        right = Math.max(point[0], right);
+        top = Math.min(point[1], top);
+        bottom = Math.max(point[1], bottom);
+      });
+      return { left, right, top, bottom };
+    }
+
+    function checkPointInRect(point, rect) {
+      return point[0] > rect.left && point[0] < rect.right
+        && point[1] > rect.top && point[1] < rect.bottom;
+    }
+
+    function checkRectIntersect(rect1, rect2) {
+      return !((rect1.right < rect2.left) || (rect1.bottom < rect2.top) || (rect2.right < rect1.left) || (rect2.bottom < rect1.top));
+    }
+
+    function checkPointInPolygon(point, polygon) {
+      let rect = getRect(polygon.points);
+      let line = [point, [rect.right + 1, rect.bottom + 1]];
+      return polygon.lines.filter(_line => checkLineIntersect(_line, line)).length % 2 === 1;
+    }
+
+    function checkPolygonInAnother(polygon1, polygon2) {
+      return polygon1.points.every(point => checkPointInPolygon(point, polygon2));
+    }
+
+    function checkPolygonIntersect(polygon1, polygon2) {
+      let rect1 = getRect(polygon1.points);
+      let rect2 = getRect(polygon2.points);
+
+      if (!checkRectIntersect(rect1, rect2)) {
+        return false;
+      }
+
+      if (checkPolygonInAnother(polygon1, polygon2) || checkPolygonInAnother(polygon2, polygon1)) {
+        return true;
+      }
+
+      return polygon1.lines.some(line1 => polygon2.lines.some(line2 => checkLineIntersect(line1, line2)));
+    }
+
+    let panel = document.querySelector('#panel');
+
+    let size = 411;
+    function newContext() {
+      let canvas = document.createElement('canvas');
+      canvas.setAttribute('width', size);
+      canvas.setAttribute('height', size);
+      panel.append(canvas);
+      return canvas.getContext('2d');
+    }
+
+    function testNormal() {
+      let ctx = newContext();
+      let n = 7;
+      let polygon1 = genPolygon(n, [147, 147], 127);
+      drawPolygon(ctx, polygon1.points, 'red');
+      let polygon2 = genPolygon(n, [259, 259], 127);
+      drawPolygon(ctx, polygon2.points, 'blue');
+      ctx.fillText(checkPolygonIntersect(polygon1, polygon2) ? "相交" : "不相交", 20, 20);
+    }
+
+    function testRect1() {
+      let ctx = newContext();
+      let points1 = [[30, 30], [309, 30], [309, 309], [30, 309]];
+      let lines1 = getLinesByPoints(points1);
+      let polygon1 = {
+        points: points1,
+        lines: lines1
+      };
+      let points2 = [[30, 30], [309, 30], [309, 309], [30, 309]];
+      let lines2 = getLinesByPoints(points2);
+      let polygon2 = {
+        points: points2,
+        lines: lines2
+      };
+      drawPolygon(ctx, points1, 'red');
+      drawPolygon(ctx, points2, 'blue');
+      ctx.fillText(checkPolygonIntersect(polygon1, polygon2) ? "相交" : "不相交", 20, 20);
+    }
+
+    function testRect2() {
+      let ctx = newContext();
+      let points1 = [[30, 30], [309, 30], [309, 309], [30, 309]];
+      let lines1 = getLinesByPoints(points1);
+      let polygon1 = {
+        points: points1,
+        lines: lines1
+      };
+      let points2 = [[50, 50], [259, 50], [259, 259], [50, 259]];
+      let lines2 = getLinesByPoints(points2);
+      let polygon2 = {
+        points: points2,
+        lines: lines2
+      };
+      drawPolygon(ctx, points1, 'red');
+      drawPolygon(ctx, points2, 'blue');
+      ctx.fillText(checkPolygonIntersect(polygon1, polygon2) ? "相交" : "不相交", 20, 20);
+    }
+
+    function testPolygon1() {
+      let ctx = newContext();
+      let n = 7;
+      let polygon1 = genPolygon(n, [199, 199], 100);
+      drawPolygon(ctx, polygon1.points, 'red');
+      let polygon2 = genPolygon(n, [199, 199], 25);
+      drawPolygon(ctx, polygon2.points, 'blue');
+      ctx.fillText(checkPolygonIntersect(polygon1, polygon2) ? "相交" : "不相交", 20, 20);
+    }
+
+    function testPolygon2() {
+      let ctx = newContext();
+      let points1 = [[30, 30], [60, 30], [60, 190], [270, 190], [270, 30], [300, 30], [300, 300], [30, 300]];
+      let lines1 = getLinesByPoints(points1);
+      let polygon1 = {
+        points: points1,
+        lines: lines1
+      };
+      let points2 = [[80, 80], [150, 80], [150, 150], [80, 150]];
+      let lines2 = getLinesByPoints(points2);
+      let polygon2 = {
+        points: points2,
+        lines: lines2
+      };
+      drawPolygon(ctx, points1, 'red');
+      drawPolygon(ctx, points2, 'blue');
+      ctx.fillText(checkPolygonIntersect(polygon1, polygon2) ? "相交" : "不相交", 20, 20);
+    }
+
+    window.onload = function () {
+      // testNormal();
+      // testRect1();
+      testRect2();
+      // testPolygon1();
+      // testPolygon2();
+    };
+  </script>
+</body>
+
+</html>

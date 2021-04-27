@@ -1,0 +1,106 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-02-08 21:53:32
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-15 15:51:26
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验2-回归</title>
+  <script src="../../../common/数学/Math.js"></script>
+  <script src="../../../common/数学/Matrix.js"></script>
+  <script src="../../../common/echarts.min.js"></script>
+  <script src="../../../common/echarts-gl.min.js"></script>
+  <script src="../../../common/Color.js"></script>
+  <script src="../../../common/Coordinate.js"></script>
+  <script src="./genData.js"></script>
+  <script src="./最小二乘法.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../common/main.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="space1"></div>
+    <div id="space2"></div>
+  </div>
+  <script>
+    window.onload = function () {
+      let space1 = document.querySelector('#space1');
+      let space2 = document.querySelector('#space2');
+
+      let coord1 = new Coordinate(space1, 800);
+      let coord2 = new Coordinate(space2, 800);
+
+      let { data, k, b, e } = genData();
+
+      let minAxis = Infinity;
+      let maxAxis = -Infinity;
+      data.forEach(value => {
+        minAxis = Math.min(minAxis, value[0]);
+        minAxis = Math.min(minAxis, value[1]);
+        maxAxis = Math.max(maxAxis, value[0]);
+        maxAxis = Math.max(maxAxis, value[1]);
+      });
+      coord1.setScale(minAxis, minAxis, maxAxis, maxAxis);
+
+      coord1.scatter(data, 2, 'black');
+
+      let hypothesis = 最小二乘法(data)
+      let hypothesis2 = 最小二乘法之梯度下降(data)
+      console.log({ real: { k, b }, hypothesis, hypothesis2 })
+      let kbs = hypothesis2.kbs;
+      let ks = kbs.map(item => item.k);
+      let bs = kbs.map(item => item.b);
+      let minK = Math.min(...ks);
+      let maxK = Math.max(...ks);
+      let minB = Math.min(...bs);
+      let maxB = Math.max(...bs);
+      let diffK = maxK - minK;
+      let diffB = maxB - minB;
+      let C = 1;
+      minK -= C * diffK;
+      maxK += C * diffK;
+      minB -= C * diffB;
+      maxB += C * diffB;
+
+      coord2.setScale(minK, minB, maxK, maxB);
+
+      let root = 2;
+      let exponential = 1 / root;
+      coord2.heatmap((k, b) => Math.pow(hypothesis2.J(k, b), exponential), minK, minB, maxK, maxB, 6);
+
+      let i = 0;
+      let imageData = coord2.ctx.getImageData(0, 0, coord2.width, coord2.height).data;
+      let interval = setInterval(() => {
+        if (i >= kbs.length - 1) {
+          clearInterval(interval);
+          // 极值点 成本函数的最小值点
+          let targetSize = 5;
+          let targetColor = 'green';
+          let k = hypothesis2.k;
+          let b = hypothesis2.b;
+          coord2.point(k, b, targetSize, targetColor)
+          coord1.line(x => k * x + b, targetSize, targetColor);
+        } else {
+          let k = kbs[i].k;
+          let b = kbs[i].b;
+          let w = coord2.x2w(k);
+          let h = coord2.y2h(b);
+          let index = 4 * (h * coord2.width + w);
+          coord1.line(x => k * x + b, 1, `rgb(${[imageData.slice(index, index + 3)].join(',')})`);
+          coord2.point(k, b, size = 1, color = 'white');
+          i++;
+        }
+      }, 5);
+    };
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,106 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-08 13:03:12
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-12 13:55:39
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碰撞</title>
+  <script src="../../common/Math.js"></script>
+  <script src="../../common/Vector.js"></script>
+  <script src="../Physics.js"></script>
+  <script src="Particle.js"></script>
+  <style>
+    #canvas1 {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <canvas id="canvas1" width="1250" height="800"></canvas>
+  </div>
+  <script>
+
+    window.onload = function () {
+      let cvs1 = document.querySelector('#canvas1');
+      let ctx = cvs1.getContext("2d");
+
+      let particles = [
+        new Particle([200, 100], 20, [0, 0]),
+        new Particle([100, 100], 20, [400, 0]),
+        new Particle([100, 160], 20, [100, 250]),
+        new Particle([140, 160], 20, [-150, 150]),
+      ]
+
+      function draw() {
+        cvs1.height = cvs1.height;
+        particles.forEach(particle => {
+          let speed = new Vector(particle.velocity).normal();
+          let maxSpeed = 5 * 100;
+          speed = Math.min(speed, maxSpeed);
+          let scale = speed / maxSpeed;
+          let red = parseInt(255 * scale)
+          let blue = 255 - red;
+          ctx.fillStyle = `rgb(${red}, 0, ${blue})`;
+          ctx.beginPath();
+          ctx.arc(...particle.position, particle.radius, 0, Math.PI * 2, true);
+          ctx.closePath();
+          ctx.fill();
+        });
+      }
+
+      draw();
+      let timer1 = setInterval(() => {
+        particles.forEach(particle1 => {
+          particle1.run();
+          let particle2 = particles.find(particle2 => {
+            return particle2 !== particle1 && particle2.isExclusion(particle1.position, particle1.radius);
+          });
+          if (particle2) {
+            let velocity1 = new Vector(particle1.velocity);
+            let velocity2 = new Vector(particle2.velocity);
+            let p12 = new Vector(particle2.position).sub(new Vector(particle1.position));
+            let v12 = velocity1.sub(new Vector(particle2.velocity));
+            let v12Normal = v12.normal();
+
+            p12 = p12.normalize();
+            v12 = v12.normalize();
+            let cosθ = p12.cosθ(v12);
+            let sinθ = p12.sinθ(v12);
+
+            let energyBefore = getEnergy(particles);
+            let momentumBefore = getMomentum(particles);
+
+            particle2.velocity = velocity1.sub(p12.rotate(Math.PI / 2).scale(v12Normal * sinθ)).data;
+            particle1.velocity = velocity1.sub(p12.scale(v12Normal * cosθ)).data;
+
+            let energyAfter = getEnergy(particles);
+            let momentumAfter = getMomentum(particles);
+            if (!Math.equal(energyBefore, energyAfter)) {
+              console.log('能量不守恒', { energyBefore, energyAfter });
+            }
+            if (!momentumBefore.equal(momentumAfter)) {
+              console.log('动量不守恒', { momentumBefore: momentumBefore.toString(), momentumAfter: momentumAfter.toString() });
+            }
+            if (velocity1.equal(new Vector(particle1.velocity)) || velocity2.equal(new Vector(particle2.velocity))) {
+              console.log('碰撞后运动无改变', { velocity1Before: velocity1.data, velocity2Before: velocity2.data, velocity1After: particle1.velocity, velocity2After: particle2.velocity });
+            }
+          }
+        })
+        draw();
+      }, 10);
+    }
+  </script>
+</body>
+
+</html>

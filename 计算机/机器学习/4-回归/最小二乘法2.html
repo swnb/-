@@ -1,0 +1,320 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-02-08 21:53:32
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-19 15:13:04
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验2-回归-2</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    #container {
+      margin-left: 200px;
+      width: 1500px;
+    }
+
+    #spaceHotmap3D {
+      width: 464px;
+      height: 460px;
+    }
+
+    #spaceW3D {
+      width: 464px;
+      height: 460px;
+    }
+
+    #spaceEmpty {
+      width: 464px;
+      height: 460px;
+    }
+  </style>
+  <script src="../../../common/数学/Math.js"></script>
+  <script src="../../../common/数学/Matrix.js"></script>
+  <script src="../../../common/数学/Optimize.js"></script>
+  <script src="../../../common/echarts.min.js"></script>
+  <script src="../../../common/echarts-gl.min.js"></script>
+  <script src="../../../common/Color.js"></script>
+  <script src="../../../common/Coordinate.js"></script>
+  <script src="./genData2.js"></script>
+  <script src="./最小二乘法2.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../common/main.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="spaceHotmap2D"></div>
+    <div id="spaceW1"></div>
+    <div id="spaceW3D" class="wrapper"></div>
+    <div id="spaceHotmap3D" class="wrapper"></div>
+    <div id="spaceEmpty" class="wrapper"></div>
+    <div id="spaceW2"></div>
+  </div>
+  <script>
+    window.onload = function () {
+      let spaceW1 = document.querySelector('#spaceW1');
+      let spaceHotmap2D = document.querySelector('#spaceHotmap2D');
+      let spaceHotmap3D = document.querySelector('#spaceHotmap3D');
+      let spaceW2 = document.querySelector('#spaceW2');
+      let spaceW3D = document.querySelector('#spaceW3D');
+
+      let coordW1 = new Coordinate(spaceW1);
+      let coordHotmap2D = new Coordinate(spaceHotmap2D);
+      let coordW2 = new Coordinate(spaceW2);
+
+      let { data, w, E } = genData();
+
+      function getMinMax() {
+        function inner(index) {
+          let min = Infinity;
+          let max = -Infinity;
+          data.forEach(value => {
+            min = Math.min(min, value[index]);
+            max = Math.max(max, value[index]);
+          });
+          return { min, max };
+        }
+        return Array(3).fill(undefined).map((_, index) => inner(index));
+      }
+
+      let minAxis = Infinity;
+      let maxAxis = -Infinity;
+      let _data = data.map(value => [value[1], value[value.length - 1]]);
+      _data.forEach(value => {
+        minAxis = Math.min(minAxis, value[0]);
+        minAxis = Math.min(minAxis, value[1]);
+        maxAxis = Math.max(maxAxis, value[0]);
+        maxAxis = Math.max(maxAxis, value[1]);
+      });
+      coordW1.setScale(minAxis, minAxis, maxAxis, maxAxis);
+      coordW1.scatter(_data, 2, 'black');
+
+      minAxis = Infinity;
+      maxAxis = -Infinity;
+      _data = data.map(value => [value[0], value[value.length - 1]]);
+      _data.forEach(value => {
+        minAxis = Math.min(minAxis, value[0]);
+        minAxis = Math.min(minAxis, value[1]);
+        maxAxis = Math.max(maxAxis, value[0]);
+        maxAxis = Math.max(maxAxis, value[1]);
+      });
+      coordW2.setScale(minAxis, minAxis, maxAxis, maxAxis);
+      coordW2.scatter(_data, 2, 'black');
+
+      let hypothesis = 最小二乘法(data)
+      let hypothesis2 = 最小二乘法之梯度下降(data);
+      console.log({ real: w, hypothesis: hypothesis.data[0], hypothesis2 })
+      let wTs = hypothesis2.wTs;
+      let w1s = wTs.map(wT => wT.data[0][0]);
+      let w2s = wTs.map(wT => wT.data[0][1]);
+      let minW1 = Math.min(...w1s);
+      let maxW1 = Math.max(...w1s);
+      let minW2 = Math.min(...w2s);
+      let maxW2 = Math.max(...w2s);
+      let diffW1 = maxW1 - minW1;
+      let diffW2 = maxW2 - minW2;
+      let C = 1;
+      minW1 -= C * diffW1;
+      maxW1 += C * diffW1;
+      minW2 -= C * diffW2;
+      maxW2 += C * diffW2;
+
+      coordHotmap2D.setScale(minW1, minW2, maxW1, maxW2);
+
+      let J = hypothesis2.J;
+      // 最大值在边界四个点上
+      let maxJ = Math.max(
+        J(new Matrix([[minW1, minW2]])),
+        J(new Matrix([[minW1, maxW2]])),
+        J(new Matrix([[maxW1, minW2]])),
+        J(new Matrix([[maxW1, maxW2]])),
+      );
+      // 最小值在极值点
+      let minJ = J(hypothesis2.wT);
+
+      let root = 2;
+      let exponential = 1 / root;
+      coordHotmap2D.heatmap((w1, w2) => Math.pow(hypothesis2.J(new Matrix([[w1, w2]])), exponential), minW1, minW2, maxW1, maxW2, 4);
+
+      let spaceHotmap3DChart = echarts.init(spaceHotmap3D);
+      let spaceHotmap3DOption = {
+        backgroundColor: '#fff',
+        visualMap: [{
+          show: false,
+          dimension: 2,
+          min: minJ,
+          max: maxJ,
+          inRange: {
+            // color: ['blue', 'red'],
+            color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026']
+          }
+        }],
+        xAxis3D: {
+          type: 'value'
+        },
+        yAxis3D: {
+          type: 'value'
+        },
+        zAxis3D: {
+          type: 'value'
+        },
+        grid3D: {
+          viewControl: {
+            // projection: 'orthographic'
+          }
+        },
+        series: [{
+          type: 'surface',
+          wireframe: {
+            // show: false
+          },
+          equation: {
+            x: {
+              min: minW1,
+              max: maxW1,
+              step: diffW1 / 40
+            },
+            y: {
+              min: minW2,
+              max: maxW2,
+              step: diffW2 / 40
+            },
+            z: function (x, y) {
+              return J(new Matrix([[x, y]]));
+            }
+          }
+        }]
+      }
+      let spaceHotmap3DScatterOption = {
+        type: 'scatter3D',
+        symbolSize: 5,
+        color: 'red',
+        data: [],
+      };
+      spaceHotmap3DOption.series.push(spaceHotmap3DScatterOption);
+      spaceHotmap3DChart.setOption(spaceHotmap3DOption);
+
+      let spaceW3DChart = echarts.init(spaceW3D);
+      let minMax = getMinMax();
+      let spaceW3DOption = {
+        backgroundColor: '#fff',
+        xAxis3D: {
+          type: 'value'
+        },
+        yAxis3D: {
+          type: 'value'
+        },
+        zAxis3D: {
+          type: 'value'
+        },
+        grid3D: {
+          viewControl: {
+            // projection: 'orthographic'
+          }
+        },
+        series: [
+          {
+            type: 'scatter3D',
+            symbolSize: 5,
+            data: data,
+          },
+        ]
+      };
+      spaceW3DChart.setOption(spaceW3DOption);
+
+      let wT;
+      let i = 0;
+      let imageData = coordHotmap2D.ctx.getImageData(0, 0, coordHotmap2D.width, coordHotmap2D.height).data;
+      let interval = setInterval(() => {
+        if (i >= wTs.length - 1) {
+          clearInterval(interval);
+          // 极值点 成本函数的最小值点
+          let targetSize = 5;
+          let targetColor = 'green';
+          wT = hypothesis2.wT;
+          let w1 = wT.data[0][0];
+          let w2 = wT.data[0][1];
+          coordW1.line(x => wT.data[0][1] * x, targetSize, targetColor);
+          coordW2.line(x => wT.data[0][0] * x, targetSize, targetColor);
+          coordHotmap2D.point(...wT.data[0], targetSize, targetColor);
+          spaceHotmap3DScatterOption.data.push([...wT.data[0], J(wT), 0]);
+          spaceW3DOption.series.push({
+            type: 'surface',
+            wireframe: {
+              // show: false
+            },
+            color: targetColor,
+            equation: {
+              x: {
+                min: minMax[0].min,
+                max: minMax[0].max,
+                step: (minMax[0].max - minMax[0].min) / 40
+              },
+              y: {
+                min: minMax[1].min,
+                max: minMax[1].max,
+                step: (minMax[1].max - minMax[1].min) / 40
+              },
+              z: function (x, y) {
+                return w1 * x + w2 * y;
+              }
+            }
+          });
+          spaceHotmap3DChart.setOption(spaceHotmap3DOption);
+          spaceW3DChart.setOption(spaceW3DOption);
+        } else {
+          wT = wTs[i];
+          let w1 = wT.data[0][0];
+          let w2 = wT.data[0][1];
+          let w = coordHotmap2D.x2w(w1);
+          let h = coordHotmap2D.y2h(w2);
+          let index = 4 * (h * coordHotmap2D.width + w);
+          let color = `rgb(${[imageData.slice(index, index + 3)].join(',')})`;
+          coordW1.line(x => w2 * x, 1, color);
+          coordW2.line(x => w1 * x, 1, color);
+          coordHotmap2D.point(...wT.data[0], 1, 'white');
+          spaceHotmap3DScatterOption.data.push([...wT.data[0], J(wT), 1]);
+          spaceW3DOption.series.push({
+            type: 'surface',
+            wireframe: {
+              // show: false
+            },
+            color: color,
+            equation: {
+              x: {
+                min: minMax[0].min,
+                max: minMax[0].max,
+                step: (minMax[0].max - minMax[0].min) / 40
+              },
+              y: {
+                min: minMax[1].min,
+                max: minMax[1].max,
+                step: (minMax[1].max - minMax[1].min) / 40
+              },
+              z: function (x, y) {
+                return w1 * x + w2 * y;
+              }
+            }
+          });
+          spaceHotmap3DChart.setOption(spaceHotmap3DOption);
+          spaceW3DChart.setOption(spaceW3DOption);
+
+          i += 20;
+        }
+      }, 20);
+      
+    };
+  </script>
+</body>
+
+</html>

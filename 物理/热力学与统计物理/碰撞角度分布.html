@@ -1,0 +1,90 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-04-12 08:55:18
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-04-12 08:55:28
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碰撞角度分布</title>
+  <script src="./common/echarts.min.js"></script>
+  <script src="./common/echarts-gl.min.js"></script>
+  <style>
+    #container>.chart {
+      width: 250px;
+      height: 250px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+  </div>
+  <script>
+
+    window.onload = function () {
+      let container = document.getElementById('container')
+      for (let i = 0; i < pθ.length; i++) {
+        let data = []
+        createChart(pθ[i], cs[i].toFixed(2))
+        // 为了使简化模型 使用最似然的角度代替整体
+        let pMax = -Infinity
+        let angleMax
+        for (let j = 0; j < pθ[i].length; j++) {
+          let p = pθ[i][j]
+          if (p > pMax) {
+            angleMax = (j / pθ[i].length) * (Math.PI / 2)
+            pMax = p
+          }
+        }
+        console.log({
+          c: cs[i],
+          angle: angleMax,
+          k: angleMax / (Math.PI / 2),
+          kc: (angleMax / (Math.PI / 2)) / cs[i]
+        })
+      }
+
+
+      function createChart(data, c) {
+        let dom = document.createElement('div')
+        dom.classList.add('chart')
+        container.append(dom)
+        var myChart = echarts.init(dom);
+        var option = {
+          title: {
+            text: c,
+          },
+          xAxis: {
+            type: 'category',
+            data: Array(data.length).fill(undefined).map((_, i) => ((Math.PI / 2) * (i + .5) / data.length).toFixed(2)),
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            data: data,
+            type: 'bar'
+          },
+          {
+            data: data,
+            type: 'line',
+            smooth: true
+          }]
+        };
+
+        myChart.setOption(option);
+      }
+    }
+  </script>
+</body>
+
+</html>

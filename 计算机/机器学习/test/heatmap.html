@@ -1,0 +1,54 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-02-09 23:05:06
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-02-25 14:42:15
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>热力图</title>
+  <script src="../../../common/Coordinate.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../common/main.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="space1"></div>
+    <div id="space2"></div>
+    <div id="space3"></div>
+  </div>
+  <script>
+    window.onload = function () {
+      let space1 = document.querySelector('#space1');
+      let space2 = document.querySelector('#space2');
+      let space3 = document.querySelector('#space3');
+
+      let coord1 = new Coordinate(space1);
+      let coord2 = new Coordinate(space2);
+      let coord3 = new Coordinate(space3, 600);
+
+      coord1.heatmap((x, y) => {
+        return Math.sqrt(x * x + y * y);
+      });
+      coord2.heatmap((x, y) => {
+        return - x - y;
+      });
+      coord3.heatmap((x, y) => {
+        let ox = 44;
+        let oy = 131;
+        let dx = x - ox;
+        let dy = y - oy;
+        return Math.sqrt(dx * dx + dy * dy);
+      }, 0, 100, 100, 200);
+    }
+  </script>
+</body>
+
+</html>

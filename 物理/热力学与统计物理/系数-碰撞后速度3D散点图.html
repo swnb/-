@@ -1,0 +1,87 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-25 14:34:54
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-04-01 18:05:07
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碰撞</title>
+  <script src="./common/echarts.min.js"></script>
+  <script src="./common/echarts-gl.min.js"></script>
+  <script src="./d2.js"></script>
+  <style>
+    #container>.chart {
+      width: 800px;
+      height: 800px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+  </div>
+  <script>
+
+    window.onload = function () {
+      let container = document.getElementById('container')
+
+      createChart(data2)
+      
+      function createChart(data) {
+        let dom = document.createElement('div')
+        dom.classList.add('chart')
+        container.append(dom)
+        var myChart = echarts.init(dom);
+        let max = data.map(item => item[3]).reduce((max, value) => Math.max(max, value), 0)
+        var option = {
+          visualMap: {
+            show: false,
+            min: 0,
+            max,
+            inRange: {
+              symbolSize: [1],
+              color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026'],
+              colorAlpha: [1]
+            }
+          },
+          xAxis3D: {
+            type: 'value'
+          },
+          yAxis3D: {
+            type: 'value'
+          },
+          zAxis3D: {
+            type: 'value'
+          },
+          grid3D: {
+            axisLine: {
+              lineStyle: { color: '#fff' }
+            },
+            axisPointer: {
+              lineStyle: { color: '#fff' }
+            },
+            viewControl: {
+              // autoRotate: true
+            }
+          },
+          series: [{
+            type: 'scatter3D',
+            data: data
+          }]
+        };
+
+        myChart.setOption(option);
+      }
+    }
+  </script>
+</body>
+
+</html>

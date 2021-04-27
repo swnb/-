@@ -1,0 +1,112 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-16 17:02:27
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-16 18:17:38
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>de Jong 吸引子</title>
+  <script src="../../common/数学/Math.js"></script>
+  <script src="../../common/Coordinate.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../common/main.css">
+</head>
+
+<body>
+  <div id="space"></div>
+  <script>
+    let space = document.getElementById('space')
+    let coord = new Coordinate(space, 800, 800)
+    coord.setScale(-2, -6, 2, 6)
+    let N = 2 ** 16
+    let points = Array(N).fill(undefined)
+      .map(_ => [
+        Math.rnd(-2, 2),
+        Math.rnd(-2, 2),
+      ])
+    function genIter(a, b, c, d) {
+      return function (point) {
+        return [
+          Math.sin(a * point[1]) - Math.cos(b * point[0]),
+          Math.sin(c * point[0]) - Math.cos(d * point[1]),
+        ]
+      }
+    }
+
+    function cubehelix(x, y, z) {
+      let a = y * z * (1.0 - z)
+      let c = Math.cos(x + Math.PI / 2.0)
+      let s = Math.sin(x + Math.PI / 2.0)
+      return [
+        z + a * (1.78277 * s - 0.14861 * c),
+        z - a * (0.29227 * c + 0.90649 * s),
+        z + a * (1.97294 * c)
+      ];
+    }
+
+    function rainbow(t) {
+      if (t < 0 || t > 1) t -= Math.floor(t)
+      let ts = Math.abs(t - .5)
+      return cubehelix(
+        (360.0 * t - 100.0) / 180.0 * Math.PI,
+        1.5 - 1.5 * ts,
+        0.8 - 0.9 * ts
+      )
+    }
+
+    let iter1 = genIter(1.641, 1.902, 0.316, 1.525)
+    let iter2 = genIter(a = 2.01, b = -2.53, c = 1.61, d = -0.33)
+
+    let imageData = coord.getImageData()
+    setInterval(() => {
+      let now = new Date().getTime()
+
+      let a = -2.0 + Math.sin(now / 8000)
+      let b = -2
+      let c = -1.2
+      let d = 2
+
+      // 吸引子是一个环
+      // let a = 1.40, b = 1.56, c = 1.40, d = -6.56
+
+      imageData.data.forEach((item, index) => {
+        imageData.data[index] = 255
+      })
+      
+      points.forEach(point => {
+        let v_t
+        let x1, x2 = point[0];
+        let y1, y2 = point[1];
+        for (let i = 0; i < 8; i++) {
+          x1 = x2, y1 = y2;
+          x2 = Math.sin(a * y1) - Math.cos(b * x1);
+          y2 = Math.sin(c * x1) - Math.cos(d * y1);
+        }
+        v_t = Math.atan(y2, x2) / Math.PI;
+        // v_t = Math.atan(point[1], point[0]) / Math.PI;
+
+        let color = rainbow(v_t / 4.0 + 0.25)
+
+        let w = coord.x2w(point[0])
+        let h = coord.y2h(point[1])
+        let index = h * coord.width + w
+        imageData.data[4 * index] = parseInt(255 * color[0])
+        imageData.data[4 * index + 1] = parseInt(255 * color[1])
+        imageData.data[4 * index + 2] = parseInt(255 * color[2])
+        imageData.data[4 * index + 3] = 255
+      })
+      coord.putImageData(imageData)
+      // coord.scatter(points, .3)
+      points = points.map(genIter(a, b, c, d))
+    }, 100)
+  </script>
+</body>
+
+</html>

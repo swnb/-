@@ -1,0 +1,73 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-02-18 13:21:43
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-15 15:44:52
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>曲线</title>
+  <script src="../../../common/Color.js"></script>
+  <script src="../../../common/Coordinate.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../common/main.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="space1"></div>
+    <div id="space2"></div>
+    <div id="space3"></div>
+    <div id="space4"></div>
+  </div>
+  <script>
+    window.onload = function () {
+      let space1 = document.querySelector('#space1');
+      let space2 = document.querySelector('#space2');
+      let space3 = document.querySelector('#space3');
+      let space4 = document.querySelector('#space4');
+
+      let coord1 = new Coordinate(space1);
+      let coord2 = new Coordinate(space2);
+      let coord3 = new Coordinate(space3);
+      let coord4 = new Coordinate(space4);
+      
+      coord1.setScale(-10, -10, 10, 110);
+      coord1.curve(x => {
+        return x * x;
+      });
+      coord1.curve(x => {
+        return 100 - x * x;
+      });
+
+      coord2.setScale(-3, -3, 4, 4);
+      coord2.curve(x => {
+        return -x;
+      }, color = 'red');
+
+      coord3.setScale(44 - 36, 0, 36 + 44, 72);
+      coord3.curve(x => {
+        let ox = 44;
+        let dx = x - ox;
+        return Math.sqrt(36 * 36 - dx * dx);
+      });
+
+      // 多值函数 不闭合 可以使用 curve2 来画图
+      coord4.setScale(44 - 40, -5, 44 + 40, 75);
+      coord4.curve(x => {
+        let ox = 44;
+        let dx = x - ox;
+        let sqrtItem = Math.sqrt(36 * 36 - dx * dx);
+        return [36 - sqrtItem, 36 + sqrtItem];
+      });
+    }
+  </script>
+</body>
+
+</html>

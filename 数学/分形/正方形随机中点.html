@@ -1,0 +1,80 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-13 12:50:08
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-14 15:43:39
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验1</title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+  <script src="../../common/数学/Math.js"></script>
+</head>
+
+<body>
+  <canvas id="canvas" width="800" height="800"></canvas>
+  <script>
+    window.onload = function () {
+      let canvas = document.querySelector('#canvas');
+      let context = canvas.getContext('2d')
+      let width = 800
+      let height = 800
+      context.fillStyle = 'black'
+      context.fillRect(0, 0, width, height)
+      let vertices = [
+        [0, 0],
+        [width - 1, 0],
+        [0, height - 1],
+        [width - 1, height - 1],
+      ]
+
+      function centerOf(point1, point2) {
+        return [Math.round((point1[0] + point2[0]) / 2), Math.round((point1[1] + point2[1]) / 2)];
+      }
+
+      function draw(point) {
+        let index = point[0] * height + point[1] - 1;
+        let imageData = context.getImageData(0, 0, width, height)
+        imageData.data[4 * index] = 0;
+        imageData.data[4 * index + 1] = 255;
+        imageData.data[4 * index + 2] = 0;
+        imageData.data[4 * index + 3] = 255;
+        context.putImageData(imageData, 0, 0);
+        imageData = null;
+      }
+
+      let point = centerOf(vertices[0], vertices[3]);
+      [...vertices, point].forEach(draw);
+      let N = width * height;
+      let i = 0;
+      let vertex;
+      let interval = setInterval(() => {
+        if (i >= N) {
+          clearInterval(interval)
+        } else {
+          let vertex2 = Math.sample(vertices);
+          while(vertex === vertex2) {
+            vertex2 = Math.sample(vertices);
+          }
+          vertex = vertex2;
+          point = centerOf(point, vertex);
+          draw(point);
+          i++;
+        }
+      }, 10);
+    };
+  </script>
+</body>
+
+</html>

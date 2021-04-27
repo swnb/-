@@ -1,0 +1,75 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-05 14:58:51
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-16 18:49:13
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>test</title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+  <script src="../../../common/数学/Math.js"></script>
+  <script src="../../../common/数学/Matrix.js"></script>
+  <script src="./genData.js"></script>
+  <script src="../../../common/Color.js"></script>
+  <script src="../../../common/Coordinate.js"></script>
+  <script src="感知机.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../common/main.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="space"></div>
+  </div>
+  <script>
+    window.onload = function () {
+
+      let data = [
+        [3, 3, 1],
+        [4, 3, 1],
+        [1, 1, -1],
+      ];
+
+      let space = document.querySelector('#space');
+      let coord = new Coordinate(space);
+
+      coord.setScale(-2, -2, 5, 5);
+      coord.scatter(data.filter(value => value[2] === -1), 2, 'blue');
+      coord.scatter(data.filter(value => value[2] === 1), 2, 'red');
+
+      let hypothesis = 感知机(data, 1);
+      console.log(hypothesis);
+
+      let wT;
+      let wTs = hypothesis.wTs;
+      let i = 0;
+      let interval = setInterval(() => {
+        if (i >= wTs.length - 1) {
+          clearInterval(interval);
+          // 极值点 成本函数的最小值点
+          let targetColor = 'green';
+          wT = hypothesis.wT;
+          coord.curve2((x1, x2) => wT.product(new Matrix([[x1, x2, 1]]).transpose()).data[0][0], targetColor);
+        } else {
+          wT = wTs[i];
+          coord.curve2((x1, x2) => wT.product(new Matrix([[x1, x2, 1]]).transpose()).data[0][0]);
+
+          i += 1;
+        }
+      }, 500);
+    };
+  </script>
+</body>
+
+</html>

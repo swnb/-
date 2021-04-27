@@ -1,0 +1,50 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-15 15:58:31
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-16 18:42:34
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>特征相关性分析</title>
+  <script src="../../../common/数学/Math.js"></script>
+  <script src="../../../common/数学/Statistic.js"></script>
+  <script src="../../../common/echarts.min.js"></script>
+  <script src="./genData.js"></script>
+  <script src="./特征相关性分析.js"></script>
+  <link rel="stylesheet" type="text/css" href="../../../common/main.css">
+  <style>
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <div id="board1" class="wrapper"></div>
+    <div id="board2" class="wrapper"></div>
+  </div>
+  <div id="bar-container">
+  </div>
+  <script>
+    let board1 = document.getElementById('board1')
+    let board2 = document.getElementById('board2')
+    let barContainer = document.getElementById('bar-container')
+    我写的相关性分析(board1, dataSet)
+    相关性分析(board2, dataSet)
+    for(let i=0;i<dataSet.vars.length;i++){
+      let text = dataSet.vars[i]
+      let board = document.createElement('div')
+      board.classList.add('wrapper')
+      barContainer.append(board)
+      直方图(board, dataSet, i)
+    }
+  </script>
+</body>
+
+</html>

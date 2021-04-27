@@ -1,0 +1,81 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-25 14:34:54
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-04-09 15:30:50
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>能量假设一下多次碰撞后能量2D直方图</title>
+  <script src="./common/echarts.min.js"></script>
+  <script src="./common/echarts-gl.min.js"></script>
+  <script src="./e2.js"></script>
+  <style>
+    #container {
+      margin-left: 20px;
+    }
+
+    #container>.chart {
+      width: 1250px;
+      height: 450px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+  </div>
+  <script>
+
+    window.onload = function () {
+      let container = document.getElementById('container')
+      createChart(es)
+      let vs = es.map(e => e ** .5)
+      for (let i = 0; i < 10; i++) console.log(i, vs[i + 1] - vs[i])
+      createChart(vs)
+      function createChart(samples) {
+        let EMax = samples.reduce((max, value) => Math.max(max, value), 0)
+        let N = 400
+        let data = Array(N).fill(0)
+        samples.forEach(e => {
+          data[Math.floor(e / EMax * N)]++
+        })
+        let dom = document.createElement('div')
+        dom.classList.add('chart')
+        container.append(dom)
+        var myChart = echarts.init(dom);
+        var option = {
+          xAxis: {
+            type: 'category',
+            data: Array(data.length).fill(undefined).map((_, i) => (EMax * (i + .5) / data.length).toFixed(2)),
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            data: data,
+            type: 'bar'
+          },
+            // {
+            //   data: data,
+            //   type: 'line',
+            //   smooth: true
+            // }
+          ]
+        };
+
+        myChart.setOption(option);
+      }
+    }
+  </script>
+</body>
+
+</html>

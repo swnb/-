@@ -1,0 +1,105 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-03-14 19:58:27
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-03-16 14:50:54
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生命游戏</title>
+  <script src="../../common/数学/Math.js"></script>
+  <style>
+    #table {
+      width: 800px;
+      height: 800px;
+    }
+
+    td.alive {
+      background-color: white;
+    }
+
+    td.dead {
+      background-color: black;
+    }
+  </style>
+</head>
+
+<body>
+  <table id="table" border="1" cellspacing="0"></table>
+  <script>
+    window.onload = function () {
+      let table = document.getElementById('table')
+      let N = 30
+      let html = []
+      for (let i = 0; i < N; i++) {
+        html.push('<tr>')
+        for (let j = 0; j < N; j++) {
+          html.push(`<td row="${i}" col="${j}" class="dead"></td>`)
+        }
+        html.push('</tr>')
+      }
+      table.innerHTML = html.join('')
+
+      function get(row, col) {
+        return table.querySelector(`td[row="${row}"][col="${col}"]`)
+      }
+
+      function dead(cell) {
+        cell.classList.remove('alive')
+        cell.classList.add('dead')
+      }
+
+      function alive(cell) {
+        cell.classList.remove('dead')
+        cell.classList.add('alive')
+      }
+
+      for (let i = 0; i < 100; i++) {
+        let row = Math.rndInt(0, N);
+        let col = Math.rndInt(0, N);
+        alive(get(row, col));
+      }
+
+      let tds = document.querySelectorAll('td');
+
+      setInterval(() => {
+        let willDead = [];
+        let willAlive = [];
+        tds.forEach(td => {
+          let row = +td.getAttribute('row')
+          let col = +td.getAttribute('col')
+          let aroundAliveCellsCount = 0;
+          [-1, 0, 1].forEach(rowOffset => {
+            let _row = row + rowOffset;
+            if (_row < 0) _row += N;
+            if (_row >= N) _row -= N;
+            [-1, 0, 1].forEach(colOffset => {
+              if (rowOffset === 0 && colOffset === 0) return
+              let _col = col + colOffset
+              if (_col < 0) _col += N
+              if (_col >= N) _col -= N
+              if (get(_row, _col).classList.contains('alive')) aroundAliveCellsCount++
+            })
+          })
+          if ([2, 8].includes(aroundAliveCellsCount)) {
+            if (td.classList.contains('dead')) willAlive.push(td)
+          } else if ([].includes(aroundAliveCellsCount)) {
+          } else {
+            if (td.classList.contains('alive')) willDead.push(td)
+          }
+        })
+        willAlive.forEach(alive)
+        willDead.forEach(dead)
+      }, 500)
+    }
+  </script>
+</body>
+
+</html>

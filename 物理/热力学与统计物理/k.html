@@ -1,0 +1,90 @@
+<!--
+ * @Description: 
+ * @version: 
+ * @Author: chenbh
+ * @Date: 2021-04-09 14:07:29
+ * @LastEditors: chenbh
+ * @LastEditTime: 2021-04-09 15:25:22
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="./common/echarts.min.js"></script>
+  <script src="./common/echarts-gl.min.js"></script>
+  <style>
+    #container {
+      margin-left: 20px;
+    }
+
+    #container>.chart {
+      width: 450px;
+      height: 450px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+  </div>
+  <script>
+    window.onload = function () {
+
+      function gen(e1, e2) {
+        let E = e1 + e2
+        function inner() {
+          let v = Math.random() * (E ** .5)
+          let e = v ** 2
+          return (Math.random() < .5) ? e : -e
+        }
+
+        let e = (Math.random() < .5) ? e1 : e2
+        e += inner()
+        if (e < 0 || e > E) return gen(e1, e2)
+        return e
+      }
+
+      let N = 1E3
+      let data = Array(N).fill(0)
+      let e1 = 1, e2 = 2
+      let E = e1 + e2
+      for (let i = 0; i < 1E3 * N; i++) {
+        let e = gen(e1, e2)
+        data[Math.floor(e * N / E)]++
+      }
+
+      console.log(data)
+      createChart(data)
+      function createChart(data) {
+        let dom = document.createElement('div')
+        dom.classList.add('chart')
+        container.append(dom)
+        var myChart = echarts.init(dom);
+        var option = {
+          xAxis: {
+            type: 'category',
+            data: Array(N).fill(undefined).map((_, i) => (E * i / N).toFixed(2)),
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            data: data,
+            type: 'bar'
+          },
+          ]
+        };
+
+        myChart.setOption(option);
+      }
+
+    };
+  </script>
+</body>
+
+</html>
