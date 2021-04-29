@@ -4,7 +4,7 @@
  * @Author: chenbh
  * @Date: 2021-04-23 14:55:52
  * @LastEditors: chenbh
- * @LastEditTime: 2021-04-27 16:48:36
+ * @LastEditTime: 2021-04-28 13:43:55
  */
 #include<stdio.h>
 #include<stdlib.h>
@@ -191,6 +191,14 @@ int main() {
   ans = solve_by_dp(n);
   finish = clock();
   printf("动态规划实现的结果为:%s, 耗时%d毫秒\n", bigNumberToString(ans), (finish - start));
+
+  start = clock();
+  ans = solve_by_matrix(n);
+  finish = clock();
+  printf("矩阵幂次实现的结果为:%s, 耗时%d毫秒\n", bigNumberToString(ans), (finish - start));
+
+  setValueFromInt(&n, 6E4);
+  printf("计算斐波那契数列第%s项的值:\n", bigNumberToString(n));
 
   start = clock();
   ans = solve_by_matrix(n);
